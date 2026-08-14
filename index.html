@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>昆虫世界 - 扭蛋抽奖</title>
+  <style>
+    /* ==================== 1. 全局布局与背景 ==================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle, #f7fbf7 0%, #e2efe2 60%, #cce3cc 100%);
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      overflow: hidden;
+    }
+
+    /* 顶部库存与状态显示 */
+    .status-bar {
+      position: absolute;
+      top: 15px;
+      background: rgba(255, 255, 255, 0.88);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      color: #2e7d32;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      z-index: 10;
+      font-weight: bold;
+    }
+
+    /* ==================== 2. 扭蛋机主体容器 ==================== */
+    .gashapon-machine {
+      position: relative;
+      width: 440px;
+      max-width: 92vw;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      filter: drop-shadow(0 15px 25px rgba(46, 90, 50, 0.15));
+    }
+
+    .machine-bg {
+      width: 100%;
+      height: auto;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* ==================== 3. 玻璃罩与内置 20 个扭蛋 ==================== */
+    .glass-chamber {
+      position: absolute;
+      top: 21.2%;
+      left: 14.2%;
+      width: 71.6%;
+      height: 35.8%;
+      border-radius: 50%;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    .chamber-egg {
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      object-fit: contain;
+      filter: drop-shadow(0 3px 5px rgba(0,0,0,0.22));
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* 堆叠分布 */
+    .e1  { bottom: 4px;  left: 12px;  transform: rotate(12deg); }
+    .e2  { bottom: 2px;  left: 58px;  transform: rotate(-18deg); }
+    .e3  { bottom: 6px;  left: 106px; transform: rotate(30deg); }
+    .e4  { bottom: 3px;  left: 154px; transform: rotate(-12deg); }
+    .e5  { bottom: 5px;  left: 202px; transform: rotate(22deg); }
+    .e6  { bottom: 2px;  left: 250px; transform: rotate(-25deg); }
+    .e7  { bottom: 42px; left: 28px;  transform: rotate(-30deg); }
+    .e8  { bottom: 45px; left: 76px;  transform: rotate(25deg); }
+    .e9  { bottom: 40px; left: 126px; transform: rotate(-10deg); }
+    .e10 { bottom: 46px; left: 174px; transform: rotate(35deg); }
+    .e11 { bottom: 42px; left: 224px; transform: rotate(-15deg); }
+    .e12 { bottom: 82px; left: 45px;  transform: rotate(20deg); }
+    .e13 { bottom: 86px; left: 92px;  transform: rotate(-28deg); }
+    .e14 { bottom: 80px; left: 140px; transform: rotate(15deg); }
+    .e15 { bottom: 84px; left: 188px; transform: rotate(-32deg); }
+    .e16 { bottom: 81px; left: 232px; transform: rotate(18deg); }
+    .e17 { bottom: 120px; left: 70px;  transform: rotate(-18deg); }
+    .e18 { bottom: 124px; left: 118px; transform: rotate(28deg); }
+    .e19 { bottom: 118px; left: 166px; transform: rotate(-22deg); }
+    .e20 { bottom: 122px; left: 210px; transform: rotate(12deg); }
+
+    /* ==================== 4. 旋转手柄与震动动画 ==================== */
+    .knob-container {
+      position: absolute;
+      top: calc(56.8% + 0.5cm);
+      left: 37.1%;
+      width: 25.8%;
+      aspect-ratio: 1;
+      cursor: pointer;
+      z-index: 5;
+      border-radius: 50%;
+      transition: transform 0.15s ease;
+    }
+
+    .knob-container:hover {
+      transform: scale(1.04);
+    }
+
+    .knob-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 50%;
+      display: block;
+    }
+
+    @keyframes spinKnob2s {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(720deg); }
+    }
+    .knob-rotating {
+      animation: spinKnob2s 2s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    @keyframes tumbleEggs2s {
+      0%   { transform: translate(0, 0) rotate(0deg); }
+      15%  { transform: translate(-10px, -18px) rotate(-25deg); }
+      30%  { transform: translate(12px, -8px) rotate(30deg); }
+      45%  { transform: translate(-8px, -20px) rotate(-15deg); }
+      60%  { transform: translate(10px, -12px) rotate(20deg); }
+      75%  { transform: translate(-5px, -6px) rotate(-10deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    .shaking .chamber-egg {
+      animation: tumbleEggs2s 0.4s ease-in-out infinite;
+    }
+
+    /* ==================== 5. 洞口滚出动画 (阶段二) ==================== */
+    .exit-chute {
+      position: absolute;
+      bottom: 3.5%;
+      left: 36.5%;
+      width: 27%;
+      height: 16%;
+      z-index: 6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .chute-egg {
+      width: 55px;
+      height: 55px;
+      object-fit: contain;
+      opacity: 0;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.3));
+    }
+
+    /* 扭蛋从洞口顺滑滚出动画 */
+    @keyframes rollOutChute {
+      0% {
+        transform: translateY(-28px) rotate(-90deg) scale(0.3);
+        opacity: 0;
+      }
+      70% {
+        transform: translateY(8px) rotate(15deg) scale(1.05);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(0) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+    }
+    .chute-egg.rolling {
+      opacity: 1;
+      animation: rollOutChute 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* ==================== 6. 飞至中央放大2倍 & 开裂弹窗 (阶段三/四) ==================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      z-index: 100;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* 核心扭蛋容器：从出蛋口飞向中央，放大2倍 */
+    .egg-stage {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      
+      /* 初始起点位于扭蛋机底部出蛋口位置，正常比例 */
+      transform: translateY(180px) scale(0.8);
+      opacity: 0;
+      transition: transform 0.65s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease;
+    }
+
+    /* 飞到屏幕中央并放大 2 倍 */
+    .modal-overlay.show .egg-stage {
+      transform: translateY(0) scale(2); 
+      opacity: 1;
+    }
+
+    /* 扭蛋上下开裂半壳 */
+    .egg-half {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: transform 0.55s cubic-bezier(0.34, 1.25, 0.64, 1);
+    }
+
+    /* 自动从中部向上/下左右裂开分离 */
+    .egg-stage.open .egg-top {
+      transform: translateY(-50px) rotate(-12deg);
+    }
+    .egg-stage.open .egg-bottom {
+      transform: translateY(50px) rotate(12deg);
+    }
+
+    /* ==================== 7. 黑色彩铅手绘笔记本纸条展开 ==================== */
+    .paper-note {
+      position: absolute;
+      width: 210px;
+      min-height: 135px;
+      padding: 16px 15px 12px 32px;
+      
+      /* 笔记本页面样式：米黄底 + 浅蓝横线 + 红边线 */
+      background: #fefcf0;
+      background-image: repeating-linear-gradient(
+        #fefcf0,
+        #fefcf0 22px,
+        #c8dded 23px,
+        #fefcf0 24px
+      );
+      
+      /* 黑色彩铅手绘外框 */
+      border: 2px solid #282828;
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      box-shadow: 
+        inset 2px 0 0 #f87878,
+        3px 8px 18px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(30, 30, 30, 0.5);
+
+      /* 初始缩放隐藏，随开壳自动展开 */
+      opacity: 0;
+      transform: scale(0.05) rotate(-12deg);
+      transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 纸条慢慢展开显示 */
+    .egg-stage.open .paper-note {
+      opacity: 1;
+      transform: scale(0.68) rotate(1deg); /* 适配 2倍 阶段内的视效 */
+    }
+
+    .paper-header {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+      font-family: 'Comic Sans MS', 'Kalam', 'Ma Shan Zheng', cursive, sans-serif;
+      text-shadow: 0.5px 0.5px 0px rgba(0, 0, 0, 0.15);
+    }
+
+    /* 中奖奖品名称：黑色彩铅手绘风格 */
+    .paper-prize {
+      font-size: 21px;
+      font-weight: 900;
+      color: #1a1a1a;
+      text-align: center;
+      line-height: 1.3;
+      margin-bottom: 10px;
+      font-family: 'Comic Sans MS', 'Kalam', 'Ma Shan Zheng', cursive, sans-serif;
+      text-shadow: 1px 1px 0px #999, -0.5px -0.5px 0px #333;
+      letter-spacing: 1.5px;
+    }
+
+    .paper-btn {
+      padding: 4px 16px;
+      background: #fefcf0;
+      color: #222;
+      border: 2px solid #222;
+      border-radius: 18px 4px 16px 5px/5px 15px 6px 18px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 2px 2px 0px #222;
+      transition: all 0.1s;
+    }
+
+    .paper-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0px 0px 0px #222;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部剩余奖品数量提示 -->
+  <div class="status-bar" id="statusBar">剩余主要奖品：160 / 160 份</div>
+
+  <!-- 扭蛋机主体结构 -->
+  <div class="gashapon-machine">
+    
+    <!-- 扭蛋机外壳 -->
+    <img src="扭蛋机.png" class="machine-bg" alt="扭蛋机外壳" onerror="alert('未找到【扭蛋机.png】！')">
+
+    <!-- 玻璃罩内的 20 个堆叠扭蛋 -->
+    <div class="glass-chamber" id="glassChamber">
+      <img src="扭蛋1.png" class="chamber-egg e1" alt="扭蛋">
+      <img src="扭蛋2.png" class="chamber-egg e2" alt="扭蛋">
+      <img src="扭蛋3.png" class="chamber-egg e3" alt="扭蛋">
+      <img src="扭蛋4.png" class="chamber-egg e4" alt="扭蛋">
+      <img src="扭蛋5.png" class="chamber-egg e5" alt="扭蛋">
+      <img src="扭蛋6.png" class="chamber-egg e6" alt="扭蛋">
+      <img src="扭蛋7.png" class="chamber-egg e7" alt="扭蛋">
+      <img src="扭蛋8.png" class="chamber-egg e8" alt="扭蛋">
+      <img src="扭蛋9.png" class="chamber-egg e9" alt="扭蛋">
+      <img src="扭蛋10.png" class="chamber-egg e10" alt="扭蛋">
+      <img src="扭蛋1.png" class="chamber-egg e11" alt="扭蛋">
+      <img src="扭蛋2.png" class="chamber-egg e12" alt="扭蛋">
+      <img src="扭蛋3.png" class="chamber-egg e13" alt="扭蛋">
+      <img src="扭蛋4.png" class="chamber-egg e14" alt="扭蛋">
+      <img src="扭蛋5.png" class="chamber-egg e15" alt="扭蛋">
+      <img src="扭蛋6.png" class="chamber-egg e16" alt="扭蛋">
+      <img src="扭蛋7.png" class="chamber-egg e17" alt="扭蛋">
+      <img src="扭蛋8.png" class="chamber-egg e18" alt="扭蛋">
+      <img src="扭蛋9.png" class="chamber-egg e19" alt="扭蛋">
+      <img src="扭蛋10.png" class="chamber-egg e20" alt="扭蛋">
+    </div>
+
+    <!-- 可旋转叶子手柄 -->
+    <div class="knob-container" id="knobBtn" onclick="startGashapon()">
+      <img src="旋转按钮.png" class="knob-image" id="knobImage" alt="旋转按钮" onerror="alert('未找到【旋转按钮.png】！')">
+    </div>
+
+    <!-- 底部洞口滚出的扭蛋 -->
+    <div class="exit-chute">
+      <img src="" class="chute-egg" id="chuteEgg" alt="滚出的扭蛋">
+    </div>
+
+  </div>
+
+  <!-- 阶段 3 & 4：屏幕中央放大2倍 + 打开扭蛋展示纸条 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="egg-stage" id="eggStage">
+      <!-- 扭蛋上下半壳 -->
+      <img src="扭蛋1.png" class="egg-half egg-top" id="eggTopImg" alt="扭蛋上半部">
+      <img src="扭蛋1.png" class="egg-half egg-bottom" id="eggBottomImg" alt="扭蛋下半部">
+
+      <!-- 中间慢慢展开的手绘笔记本纸条 -->
+      <div class="paper-note" id="paperNote">
+        <div class="paper-header">★ 恭喜获得 ★</div>
+        <div class="paper-prize" id="prizeText">尺子</div>
+        <button class="paper-btn" onclick="closeModal()">收下奖品</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isPlaying = false;
+
+    // 160 份奖品库存与精准概率设置
+    const inventory = {
+      ruler:    { name: "尺子",                   stock: 75, prob: 0.46875 },
+      lemonade: { name: "蜂蜜柠檬水",             stock: 50, prob: 0.3125 },
+      yogurt:   { name: "文创酸奶",               stock: 15, prob: 0.09375 },
+      vr:       { name: "“蚂蚁的世界”VR体验券",  stock: 20, prob: 0.125 }
+    };
+
+    function getRandomEggImage() {
+      const randomIdx = Math.floor(Math.random() * 10) + 1;
+      return `扭蛋${randomIdx}.png`;
+    }
+
+    // 抽奖逻辑
+    function drawPrize() {
+      const totalStock = Object.values(inventory).reduce((sum, item) => sum + item.stock, 0);
+
+      // 160份抽完后，显示说明“明信片一张”
+      if (totalStock <= 0) {
+        return "明信片一张";
+      }
+
+      const rand = Math.random();
+      let cumulative = 0;
+
+      for (const key in inventory) {
+        const item = inventory[key];
+        if (item.stock > 0) {
+          const currentWeight = item.stock / totalStock;
+          cumulative += currentWeight;
+          if (rand <= cumulative) {
+            item.stock--; // 扣减库存
+            updateStatusUI();
+            return item.name;
+          }
+        }
+      }
+
+      return "明信片一张";
+    }
+
+    function updateStatusUI() {
+      const totalStock = Object.values(inventory).reduce((sum, item) => sum + item.stock, 0);
+      document.getElementById('statusBar').innerText = `剩余主要奖品：${totalStock} / 160 份`;
+    }
+
+    // 主抽奖流程控制（精细化时间轴控制）
+    function startGashapon() {
+      if (isPlaying) return;
+      isPlaying = true;
+
+      const glassChamber = document.getElementById('glassChamber');
+      const knobImage = document.getElementById('knobImage');
+      const chuteEgg = document.getElementById('chuteEgg');
+      const modalOverlay = document.getElementById('modalOverlay');
+      const eggStage = document.getElementById('eggStage');
+      const prizeText = document.getElementById('prizeText');
+      const eggTopImg = document.getElementById('eggTopImg');
+      const eggBottomImg = document.getElementById('eggBottomImg');
+
+      // 1. 预先决定抽中奖品与随机扭蛋皮肤
+      const resultPrize = drawPrize();
+      prizeText.innerText = resultPrize;
+
+      const randomEggPic = getRandomEggImage();
+      chuteEgg.src = randomEggPic;
+      eggTopImg.src = randomEggPic;
+      eggBottomImg.src = randomEggPic;
+
+      // 重置状态
+      chuteEgg.classList.remove('rolling');
+      eggStage.classList.remove('open');
+
+      // 【阶段一】：触发手柄旋转 & 玻璃罩内扭蛋混弹震动（持续 2 秒）
+      knobImage.classList.add('knob-rotating');
+      glassChamber.classList.add('shaking');
+
+      // 2 秒后手柄与震动停止
+      setTimeout(() => {
+        knobImage.classList.remove('knob-rotating');
+        glassChamber.classList.remove('shaking');
+
+        // 【阶段二】：扭蛋从机身下方洞口滚出来（0.45 秒动画）
+        chuteEgg.classList.add('rolling');
+
+        // 洞口滚出动画完成后，进入【阶段三】
+        setTimeout(() => {
+          chuteEgg.style.opacity = '0'; // 隐去洞口处的静态球
+
+          // 开启暗色遮罩，扭蛋从出蛋口飞向屏幕中央并放大 2 倍
+          modalOverlay.classList.add('show');
+
+          // 【阶段四】：到达中央放大 2 倍后（0.6秒后），自动从中裂开并慢慢展开手绘纸条
+          setTimeout(() => {
+            eggStage.classList.add('open');
+          }, 600);
+
+        }, 400);
+
+      }, 2000); // 2秒转动时间
+    }
+
+    // 关闭弹窗恢复初始状态
+    function closeModal() {
+      const modalOverlay = document.getElementById('modalOverlay');
+      const eggStage = document.getElementById('eggStage');
+      const chuteEgg = document.getElementById('chuteEgg');
+
+      eggStage.classList.remove('open');
+      modalOverlay.classList.remove('show');
+      chuteEgg.classList.remove('rolling');
+      chuteEgg.style.opacity = '0';
+
+      setTimeout(() => {
+        isPlaying = false;
+      }, 400);
+    }
+  </script>
+</body>
+</html>
