@@ -414,7 +414,7 @@
     function drawPrize() {
       const totalStock = Object.values(inventory).reduce((sum, item) => sum + item.stock, 0);
 
-      // 160份抽完后，显示说明“明信片一张”
+      // 140份抽完后，显示说明“明信片一张”
       if (totalStock <= 0) {
         return "明信片一张";
       }
@@ -440,7 +440,7 @@
 
     function updateStatusUI() {
       const totalStock = Object.values(inventory).reduce((sum, item) => sum + item.stock, 0);
-      document.getElementById('statusBar').innerText = `剩余主要奖品：${totalStock} / 160 份`;
+      document.getElementById('statusBar').innerText = `剩余主要奖品：${totalStock} / 140 份`;
     }
 
     // 主抽奖流程控制（精细化时间轴控制）
