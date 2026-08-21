@@ -333,7 +333,7 @@
 <body>
 
   <!-- 顶部剩余奖品数量提示 -->
-  <div class="status-bar" id="statusBar">剩余主要奖品：160 / 160 份</div>
+  <div class="status-bar" id="statusBar">剩余主要奖品：140 / 140 份</div>
 
   <!-- 扭蛋机主体结构 -->
   <div class="gashapon-machine">
@@ -396,12 +396,13 @@
   <script>
     let isPlaying = false;
 
-    // 160 份奖品库存与精准概率设置
+    // 140 份奖品库存与精准概率设置
     const inventory = {
-      ruler:    { name: "尺子",                   stock: 75, prob: 0.46875 },
-      lemonade: { name: "蜂蜜柠檬水",             stock: 50, prob: 0.3125 },
-      yogurt:   { name: "文创酸奶",               stock: 15, prob: 0.09375 },
-      vr:       { name: "“蚂蚁的世界”VR体验券",  stock: 20, prob: 0.125 }
+      ruler:    { name: "尺子",                   stock: 75, prob: 0.4286 },
+      lemonade: { name: "蜂蜜柠檬水",             stock: 50, prob: 0.2857 },
+      yogurt:   { name: "文创酸奶券",               stock: 15, prob: 0.1071 },
+      vr:       { name: "“蚂蚁的世界”VR体验券",  stock: 20, prob: 0.1429 },
+      magnet:   { name: "冰箱贴",             stock:5, prob: 0.0357 }
     };
 
     function getRandomEggImage() {
